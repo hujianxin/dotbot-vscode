@@ -58,8 +58,7 @@ class VSCode(dotbot.Plugin):
                 result = True
             else:
                 result = False
-                self._log.error(
-                    "Error operation, please refer to documentation.")
+                self._log.error("Error operation, please refer to documentation.")
         return result
 
     def _install(self, extension):
@@ -69,8 +68,9 @@ class VSCode(dotbot.Plugin):
         call([self.__code, "--uninstall-extension", extension])
 
     def _installed_extensions(self):
-        output = check_output(
-            [self.__code, "--list-extensions"]).decode(sys.getdefaultencoding())
+        output = check_output([self.__code, "--list-extensions"]).decode(
+            sys.getdefaultencoding()
+        )
 
         return set(line.lower() for line in output.splitlines())
 
