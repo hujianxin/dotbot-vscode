@@ -10,10 +10,6 @@ class VSCode(dotbot.Plugin):
     DIRECTIVE_VSCODE = "vscode"
     DIRECTIVE_VSCODE_FILE = "vscodefile"
 
-    def __init__(self, context):
-        super().__init__(self)
-        self._log.info("==> Start processing vscode tasks...")
-
     def can_handle(self, directive):
         self.__code = shutil.which("code")
         exists = True if self.__code else False
