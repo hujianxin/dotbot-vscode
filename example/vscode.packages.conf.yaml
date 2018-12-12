@@ -1,0 +1,12 @@
+- vscode:
+    dbaeumer.vscode-eslint: install
+    eamodio.gitlens: uninstall
+    eg2.tslint:
+
+- vscodefile: Vscodefile
+
+- vscodefile:
+    - Vscodefile1
+    - Vscodefile2
+
+- vscodefile: [Vscodefile3, Vscodefile4]

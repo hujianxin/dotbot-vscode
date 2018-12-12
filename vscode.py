@@ -1,9 +1,8 @@
-import os
 import sys
 import shutil
 import dotbot
 
-from subprocess import check_output, check_call
+from subprocess import check_output, call
 
 
 class VSCode(dotbot.Plugin):
@@ -20,15 +19,46 @@ class VSCode(dotbot.Plugin):
 
     def handle(self, directive, data):
         if directive == self.DIRECTIVE_VSCODE_FILE:
-            self._sync(data)
+            return self._handle_vscodefile(data)
         elif directive == self.DIRECTIVE_VSCODE:
-            pass
+            return self._handle_vscode(data)
+
+    def _handle_vscodefile(self, data):
+        vscodefiles = []
+        if isinstance(data, str):
+            vscodefiles.append(data)
+        elif isinstance(data, list):
+            vscodefiles.extend(data)
+        else:
+            self._log.error("Error format, please refer to document.")
+            return False
+        result = True
+        for vsfile in vscodefiles:
+            result = result and self._sync_vscodefile(vsfile)
+        return result
+
+    def _handle_vscode(self, data):
+        if not isinstance(data, dict):
+            self._log.error("Error format, please refer to document.")
+            return False
+        for extension in data:
+            if not data[extension]:
+                operation = "install"
+            else:
+                operation = data[extension]
+            if operation == "install":
+                self._install(extension)
+            elif operation == "uninstall":
+                self._uninstall(extension)
+            else:
+                self._log.error("Error operation, please refer to document.")
+                return False
 
     def _install(self, extension):
-        check_call([self.__code, "--install-extension", extension])
+        call([self.__code, "--install-extension", extension])
 
     def _uninstall(self, extension):
-        check_call([self.__code, "--uninstall-extension", extension])
+        call([self.__code, "--uninstall-extension", extension])
 
     def _installed_extensions(self):
         output = check_output([self.__code, "--list-extensions"]).decode(
@@ -43,11 +73,11 @@ class VSCode(dotbot.Plugin):
                 result = [e.strip().lower() for e in f.readlines()]
 
         except FileNotFoundError:
-            self._log.info("Can not find vscodefile: {}".format(vsfile))
+            self._log.error("Can not find vscodefile: {}".format(vsfile))
             return None
         return result
 
-    def _sync(self, vsfile):
+    def _sync_vscodefile(self, vsfile):
         installed_extensions = self._installed_extensions()
 
         vscodefile_extensions = self._vscodefile_extensions(vsfile)
