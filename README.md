@@ -4,8 +4,8 @@ Plugin for [dotbot](https://github.com/anishathalye/dotbot). dotbot-vscode adds 
 ## Installation
 1. Add this plugin to your dotfiles repository as a git submodule
     `git submodule add https://github.com/hujianxin/dotbot-vscode`
-2. Prefer to split your vscode extensions installation to a sigle file like `vscode.packages.conf.yaml`
-    `./install -p dotbot-vscode/vscode.py -c vscode.packages.conf.yaml`
+2. Add `vsocde` or `vscodefile` directive to your config file
+3. Edit you `install` script to change like this `"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" --plugin-dir dotbot-vscode -c "${CONFIG}" "${@}"`
 
 ## Detail
 This is an example file.
@@ -28,3 +28,4 @@ For `vscode` directive, you ought to specify the operation to install or uninsta
 For `vscodefile` directive, you ought to generate a vscodefile using `code --list-extensions > $DIR/vscodefile` command.
 
 In other place, you run `./install -p dotbot-vscode/vscode.py -c vscode.packages.conf.yaml`, `dotbot-vscode` will uninstall the extensions which are installed but not in `vscodefile`, and install the extensions which are not installed but in `vscodefile`.
+
