@@ -1,3 +1,4 @@
+# coding=utf-8
 import sys
 import shutil
 import dotbot
@@ -9,19 +10,25 @@ class VSCode(dotbot.Plugin):
     DIRECTIVE_VSCODE = "vscode"
     DIRECTIVE_VSCODE_FILE = "vscodefile"
 
+    def __init__(self, context):
+        super().__init__(self)
+        self._log.info("==> Start processing vscode tasks...")
+
     def can_handle(self, directive):
         self.__code = shutil.which("code")
         exists = True if self.__code else False
 
-        return exists and (
+        return exists & (
             directive in (self.DIRECTIVE_VSCODE, self.DIRECTIVE_VSCODE_FILE)
         )
 
     def handle(self, directive, data):
+        res = True
         if directive == self.DIRECTIVE_VSCODE_FILE:
-            return self._handle_vscodefile(data)
+            res = self._handle_vscodefile(data)
         elif directive == self.DIRECTIVE_VSCODE:
-            return self._handle_vscode(data)
+            res = self._handle_vscode(data)
+        return res
 
     def _handle_vscodefile(self, data):
         vscodefiles = []
@@ -30,17 +37,18 @@ class VSCode(dotbot.Plugin):
         elif isinstance(data, list):
             vscodefiles.extend(data)
         else:
-            self._log.error("Error format, please refer to document.")
+            self._log.error("Error format, please refer to documentation.")
             return False
         result = True
         for vsfile in vscodefiles:
-            result = result and self._sync_vscodefile(vsfile)
+            result &= self._sync_vscodefile(vsfile)
         return result
 
     def _handle_vscode(self, data):
         if not isinstance(data, dict):
-            self._log.error("Error format, please refer to document.")
+            self._log.error("Error format, please refer to documentation.")
             return False
+        result = False
         for extension in data:
             if not data[extension]:
                 operation = "install"
@@ -48,11 +56,14 @@ class VSCode(dotbot.Plugin):
                 operation = data[extension]
             if operation == "install":
                 self._install(extension)
+                result = True
             elif operation == "uninstall":
                 self._uninstall(extension)
+                result = True
             else:
-                self._log.error("Error operation, please refer to document.")
-                return False
+                result = False
+                self._log.error("Error operation, please refer to documentation.")
+        return result
 
     def _install(self, extension):
         call([self.__code, "--install-extension", extension])
@@ -79,8 +90,8 @@ class VSCode(dotbot.Plugin):
 
     def _sync_vscodefile(self, vsfile):
         installed_extensions = self._installed_extensions()
-
         vscodefile_extensions = self._vscodefile_extensions(vsfile)
+
         if not vscodefile_extensions:
             return False
 
