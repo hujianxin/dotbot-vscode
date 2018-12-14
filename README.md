@@ -11,17 +11,23 @@ Plugin for [dotbot](https://github.com/anishathalye/dotbot). dotbot-vscode adds 
 This is an example file.
 ```yaml
 - vscode:
-    dbaeumer.vscode-eslint: install
-    eamodio.gitlens: uninstall
+    dbaeumer.vscode-eslint: 
+        status: install
+        insider: true
+    eamodio.gitlens: 
+        status: uninstall
+        insider: true
     eg2.tslint:
+        status: install
+        insider: false
 
-- vscodefile: Vscodefile
+- vscodefile: 
+    file: Vscodefile
+    insider: true
 
-- vscodefile:
-    - Vscodefile1
-    - Vscodefile2
-
-- vscodefile: [Vscodefile3, Vscodefile4]
+- vscodefile: 
+    file: Vscodefile
+    insider: false
 ```
 For `vscode` directive, you ought to specify the operation to install or uninstall, default is install.
 

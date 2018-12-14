@@ -11,138 +11,68 @@ class VSCode(dotbot.Plugin):
     DIRECTIVE_VSCODE_FILE = "vscodefile"
 
     def can_handle(self, directive):
-        self.__code = shutil.which("code")
-        self.__code_insiders = shutil.which("code-insiders")
         return directive in (self.DIRECTIVE_VSCODE, self.DIRECTIVE_VSCODE_FILE)
 
     def handle(self, directive, data):
-        res = True
         if directive == self.DIRECTIVE_VSCODE_FILE:
-            res = self._handle_vscodefile(data)
+            return self._handle_vscodefile(data)
         elif directive == self.DIRECTIVE_VSCODE:
-            res = self._handle_vscode(data)
-        return res
+            return self._handle_vscode(data)
 
     def _handle_vscodefile(self, data):
         if not isinstance(data, dict) or len(data) > 2:
-            raise VSCodeError("Error format, please refer to documentation.")
+            self._log.error("Error format, please refer to documentation.")
+            return False
         elif len(data) == 2 and ("file" not in data or "insiders" not in data):
-            raise VSCodeError("Error format, please refer to documentation.")
+            self._log.error("Error format, please refer to documentation.")
+            return False
         elif "file" not in data:
-            raise VSCodeError("Error format, please refer to documentation.")
+            self._log.error("Error format, please refer to documentation.")
+            return False
 
         if "insiders" not in data:
             insiders = False
         else:
             insiders = data["insiders"]
-        f = data["file"]
-        return self._sync_vscodefile(f, insiders)
+        code = VSCodeInstance(insiders)
+        vsfile = data["file"]
+        return self._sync_vscodefile(vsfile, code)
 
-    def _handle_vscode(self, data):
+    def _handle_vscode(self, data: dict):
         if not isinstance(data, dict):
             self._log.error("Error format, please refer to documentation.")
             return False
-        result = False
-        for extension_dict in data:
-            if not extension_dict or len(extension_dict) != 1:
-                raise VSCodeError("Error format, please refer to documentation.")
-            tmp = extension_dict.popitem()
-            extension_name = tmp[0]
-            extension_status = tmp[1]
+        for extension in data:
+            extension_status = data[extension]
             if not isinstance(extension_status, dict) or len(extension_status) > 2:
-                raise VSCodeError("Error format, please refer to documentation.")
+                self._log.error("Error format, please refer to documentation.")
+                return False
             elif len(extension_status) == 2 and (
                 "status" not in extension_status or "insiders" not in extension_status
             ):
-                raise VSCodeError("Error format, please refer to documentation.")
+                self._log.error("Error format, please refer to documentation.")
+                return False
             elif "status" not in extension_status:
-                raise VSCodeError("Error format, please refer to documentation.")
-            status = extension_status["status"]
+                self._log.error("Error format, please refer to documentation.")
+                return False
+
             if "insiders" not in extension_status:
                 insiders = False
             else:
-                insiders = data["insiders"]
-            if status == "install":
-                self._install(extension_name, insiders)
-                result = True
-            elif status == "uninstall":
-                self._uninstall(extension_name, insiders)
-                result = True
-            else:
-                result = False
-                self._log.error("Error operation, please refer to documentation.")
-        return result
-
-    def _install(self, extension, insiders):
-        if insiders:
-            if self.__code_insiders:
-                call([self.__code_insiders, "--install-extension", extension])
-            else:
-                raise VSCodeError(
-                    "{} is not be \
-                        installed.".format(
-                        self.__code_insiders
-                    )
-                )
-        else:
-            if self.__code:
-                call([self.__code, "--install-extension", extension])
-            else:
-                raise VSCodeError(
-                    "{} is not be \
-                        installed.".format(
-                        self.__code
-                    )
-                )
-
-    def _uninstall(self, extension, insiders):
-        if insiders:
-            if self.__code_insiders:
-                call([self.__code_insiders, "--uninstall-extension", extension])
-            else:
-                raise VSCodeError(
-                    "{} is not be \
-                        installed.".format(
-                        self.__code_insiders
-                    )
-                )
-        else:
-            if self.__code:
-                call([self.__code, "--uninstall-extension", extension])
-            else:
-                raise VSCodeError(
-                    "{} is not be \
-                        installed.".format(
-                        self.__code
-                    )
-                )
-
-    def _installed_extensions(self, insiders):
-        output = check_output([self.__code, "--list-extensions"]).decode(
-            sys.getdefaultencoding()
-        )
-        if insiders:
-            if self.__code_insiders:
-                call([self.__code_insiders, "--list-extensions"])
-            else:
-                raise VSCodeError(
-                    "{} is not be \
-                        installed.".format(
-                        self.__code_insiders
-                    )
-                )
-        else:
-            if self.__code:
-                call([self.__code, "--list-extensions"])
-            else:
-                raise VSCodeError(
-                    "{} is not be \
-                        installed.".format(
-                        self.__code
-                    )
-                )
-
-        return set(line.lower() for line in output.splitlines())
+                insiders = extension_status["insiders"]
+            code = VSCodeInstance(insiders)
+            try:
+                if extension_status["status"] == "install":
+                    code.install(extension)
+                elif extension_status["status"] == "uninstall":
+                    code.uninstall(extension)
+                else:
+                    self._log.error("Error format, please refer to documentation.")
+                    return False
+            except VSCodeError as e:
+                self.log.error(e.message)
+                return False
+        return True
 
     def _vscodefile_extensions(self, vsfile):
         try:
@@ -155,8 +85,7 @@ class VSCode(dotbot.Plugin):
 
         return result
 
-    def _sync_vscodefile(self, vsfile, insiders):
-        installed_extensions = self._installed_extensions(insiders)
+    def _sync_vscodefile(self, vsfile, code):
         vscodefile_extensions = self._vscodefile_extensions(vsfile)
 
         if not vscodefile_extensions:
@@ -164,6 +93,7 @@ class VSCode(dotbot.Plugin):
 
         need_install, need_remove = [], []
         try:
+            installed_extensions = code.installed_extensions()
             for extension in installed_extensions:
                 if extension.lower() not in vscodefile_extensions:
                     need_remove.append(extension)
@@ -173,14 +103,49 @@ class VSCode(dotbot.Plugin):
                     need_install.append(extension)
 
             for extension in need_install:
-                self._install(extension, insiders)
+                code.install(extension)
 
             for extension in need_remove:
-                self._uninstall(extension, insiders)
-        except Exception:
+                code.uninstall(extension)
+        except VSCodeError as e:
+            self._log.error(e.message)
             return False
         return True
 
 
+class VSCodeInstance(object):
+    def __init__(self, insiders=False):
+        if not insiders:
+            self._name = "Visual Studio Code"
+            self._binary = shutil.which("code")
+        else:
+            self._name = "Visual Studio Code Insiders"
+            self._binary = shutil.which("code-insiders")
+
+    @property
+    def installed(self):
+        return self._binary is not None
+
+    def installed_extensions(self):
+        if not self.installed:
+            raise VSCodeError("{} is not installed.".format(self._name))
+        output = check_output([self._binary, "--list-extensions"]).decode(
+            sys.getdefaultencoding()
+        )
+
+        return set(line.lower() for line in output.splitlines())
+
+    def install(self, extension):
+        if not self.installed:
+            raise VSCodeError("{} is not installed.".format(self._name))
+        call([self._binary, "--install-extension", extension])
+
+    def uninstall(self, extension):
+        if not self.installed:
+            raise VSCodeError("{} is not installed.".format(self._name))
+        call([self._binary, "--uninstall-extension", extension])
+
+
 class VSCodeError(Exception):
-    pass
+    def __init__(self, message):
+        self.message = message
