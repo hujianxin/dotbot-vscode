@@ -43,25 +43,30 @@ class VSCode(dotbot.Plugin):
             self._log.error("Error format, please refer to documentation.")
             return False
         result = False
-        for extension in data:
-            if not isinstance(extension, dict) or len(extension) > 2:
+        for extension_dict in data:
+            if not extension_dict or len(extension_dict) != 1:
                 raise VSCodeError("Error format, please refer to documentation.")
-            elif len(extension) == 2 and (
-                "status" not in extension or "insiders" not in extension
+            tmp = extension_dict.popitem()
+            extension_name = tmp[0]
+            extension_status = tmp[1]
+            if not isinstance(extension_status, dict) or len(extension_status) > 2:
+                raise VSCodeError("Error format, please refer to documentation.")
+            elif len(extension_status) == 2 and (
+                "status" not in extension_status or "insiders" not in extension_status
             ):
                 raise VSCodeError("Error format, please refer to documentation.")
-            elif "status" not in extension:
+            elif "status" not in extension_status:
                 raise VSCodeError("Error format, please refer to documentation.")
-            status = extension["status"]
-            if "insiders" not in data:
+            status = extension_status["status"]
+            if "insiders" not in extension_status:
                 insiders = False
             else:
                 insiders = data["insiders"]
             if status == "install":
-                self._install(extension, insiders)
+                self._install(extension_name, insiders)
                 result = True
-            elif operation == "uninstall":
-                self._uninstall(extensin)
+            elif status == "uninstall":
+                self._uninstall(extension_name, insiders)
                 result = True
             else:
                 result = False
