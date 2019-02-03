@@ -11,27 +11,26 @@ Plugin for [dotbot](https://github.com/anishathalye/dotbot). dotbot-vscode adds 
 This is an example file.
 ```yaml
 - vscode:
-    dbaeumer.vscode-eslint: 
+    dbaeumer.vscode-eslint:
         status: install
-        insider: true
-    eamodio.gitlens: 
+        insiders: true
+    eamodio.gitlens:
         status: uninstall
-        insider: true
+        insiders: true
     eg2.tslint:
         status: install
-        insider: false
+        insiders: false
 
-- vscodefile: 
+- vscodefile:
     file: Vscodefile
-    insider: true
+    insiders: true
 
-- vscodefile: 
+- vscodefile:
     file: Vscodefile
-    insider: false
+    insiders: false
 ```
 For `vscode` directive, you ought to specify the operation to install or uninstall, default is install.
 
 For `vscodefile` directive, you ought to generate a vscodefile using `code --list-extensions > $DIR/vscodefile` command.
 
 In other place, you run `./install -p dotbot-vscode/vscode.py -c vscode.packages.conf.yaml`, `dotbot-vscode` will uninstall the extensions which are installed but not in `vscodefile`, and install the extensions which are not installed but in `vscodefile`.
-
