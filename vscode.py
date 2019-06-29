@@ -1,9 +1,16 @@
 # coding: utf-8
+import os
 import sys
-import shutil
 import dotbot
 
 from subprocess import check_output, call
+
+
+sys.path.append(
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib", "whichcraft")
+)
+
+from whichcraft import which
 
 
 class VSCode(dotbot.Plugin):
@@ -38,7 +45,7 @@ class VSCode(dotbot.Plugin):
         vsfile = data["file"]
         return self._sync_vscodefile(vsfile, code)
 
-    def _handle_vscode(self, data: dict):
+    def _handle_vscode(self, data):
         if not isinstance(data, dict):
             self._log.error("Error format, please refer to documentation.")
             return False
@@ -117,10 +124,10 @@ class VSCodeInstance(object):
     def __init__(self, insiders=False):
         if not insiders:
             self._name = "Visual Studio Code"
-            self._binary = shutil.which("code")
+            self._binary = which("code")
         else:
             self._name = "Visual Studio Code Insiders"
-            self._binary = shutil.which("code-insiders")
+            self._binary = which("code-insiders")
 
     @property
     def installed(self):
